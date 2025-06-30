@@ -1,0 +1,26 @@
+{
+    "businessName": "Sweet Delights Bakery",
+    "owner": "Test Person",
+    "address": "123 Sweet Street, Cake Town, CT 123456",
+    "phone": [
+        "+91 77198",
+        "+91 87654 32109"
+    ],
+    "email": [
+        "orders@sweetdelights.com",
+        "info@sweetdelights.com"
+    ],
+    "whatsapp": "+91 8509715190",
+    "website": "https://sweetdelights.com",
+    "settings": {
+        "currency": "INR",
+        "delivery": {
+            "sameDay": true,
+            "freeAbove": 500
+        },
+        "workingHours": {
+            "mon-sat": "9:00 AM - 9:00 PM",
+            "sun": "10:00 AM - 6:00 PM"
+        }
+    }
+}
