@@ -1,0 +1,22 @@
+{
+  "name": "cake-website",
+  "version": "1.0.0",
+  "description": "A modern, animated, and responsive cake shop website with management system.",
+  "main": "index.html",
+  "scripts": {
+    "dev": "live-server",
+    "start": "live-server"
+  },
+  "keywords": [
+    "cake",
+    "bakery",
+    "website",
+    "responsive",
+    "management"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
