@@ -96,7 +96,7 @@ const cakesData = [
 let cart = [];
 
 // DOM Content Loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadFeaturedCakes();
     loadAllCakes();
     updateCartCount();
@@ -108,15 +108,15 @@ function showPage(pageId) {
     // Hide all pages
     const pages = document.querySelectorAll('.page');
     pages.forEach(page => page.classList.remove('active'));
-    
+
     // Show selected page
     document.getElementById(pageId).classList.add('active');
-    
+
     // Load cart items when cart page is shown
     if (pageId === 'cart') {
         displayCartItems();
     }
-    
+
     // Scroll to top
     window.scrollTo(0, 0);
 }
@@ -125,7 +125,7 @@ function showPage(pageId) {
 function loadFeaturedCakes() {
     const featuredContainer = document.getElementById('featuredCakes');
     const featuredCakes = cakesData.filter(cake => cake.featured);
-    
+
     featuredContainer.innerHTML = featuredCakes.map(cake => createCakeCard(cake)).join('');
 }
 
@@ -155,19 +155,25 @@ function createCakeCard(cake) {
 }
 
 // Filter Cakes
-function filterCakes(category) {
+function filterCakes(category, event) {
     const cakeCards = document.querySelectorAll('#allCakes .cake-card');
     const filterBtns = document.querySelectorAll('.filter-btn');
-    
+
     // Update active filter button
     filterBtns.forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    
+    if (event && event.target) {
+        event.target.classList.add('active');
+    } else {
+        // fallback for direct call
+        filterBtns.forEach(btn => {
+            if (btn.textContent.trim().toLowerCase() === category) btn.classList.add('active');
+        });
+    }
     // Show/hide cakes based on category
     cakeCards.forEach(card => {
         if (category === 'all' || card.dataset.category === category) {
             card.style.display = 'block';
-            card.style.animation = 'fadeIn 0.5s ease';
+            card.style.animation = 'popout 0.4s cubic-bezier(.36,1.64,.7,.98)';
         } else {
             card.style.display = 'none';
         }
@@ -178,7 +184,7 @@ function filterCakes(category) {
 function addToCart(cakeId) {
     const cake = cakesData.find(c => c.id === cakeId);
     const existingItem = cart.find(item => item.id === cakeId);
-    
+
     if (existingItem) {
         existingItem.quantity += 1;
     } else {
@@ -190,7 +196,7 @@ function addToCart(cakeId) {
             quantity: 1
         });
     }
-    
+
     updateCartCount();
     saveCart();
     showSuccessMessage(`${cake.name} added to cart!`);
@@ -201,7 +207,7 @@ function updateCartCount() {
     const cartCount = document.getElementById('cartCount');
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     cartCount.textContent = totalItems;
-    
+
     // Add animation
     cartCount.style.animation = 'pulse 0.5s ease';
     setTimeout(() => {
@@ -213,7 +219,7 @@ function updateCartCount() {
 function displayCartItems() {
     const cartItemsContainer = document.getElementById('cartItems');
     const cartTotal = document.getElementById('cartTotal');
-    
+
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = `
             <div class="empty-cart">
@@ -226,7 +232,7 @@ function displayCartItems() {
         cartTotal.innerHTML = '';
         return;
     }
-    
+
     cartItemsContainer.innerHTML = cart.map(item => `
         <div class="cart-item">
             <div class="cart-item-info">
@@ -243,7 +249,7 @@ function displayCartItems() {
             </button>
         </div>
     `).join('');
-    
+
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     cartTotal.innerHTML = `
         <div class="cart-total">
@@ -301,10 +307,10 @@ function showSuccessMessage(message) {
     const successDiv = document.createElement('div');
     successDiv.className = 'success-message show';
     successDiv.textContent = message;
-    
+
     // Add to body
     document.body.appendChild(successDiv);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
         successDiv.remove();
@@ -312,16 +318,16 @@ function showSuccessMessage(message) {
 }
 
 // Order Form Handling
-function submitOrder() {
+async function submitOrder() {
     const form = document.getElementById('orderForm');
     const formData = new FormData(form);
-    
+
     // Validate form
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
     }
-    
+
     // Get form data
     const orderData = {
         name: formData.get('name'),
@@ -336,22 +342,25 @@ function submitOrder() {
         items: cart,
         total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
     };
-    
+
+    // Use WhatsApp from config.json for order
+    const config = await getConfig();
+    const whatsapp = config && config.whatsapp ? config.whatsapp.replace(/\D/g, '') : '918509715190';
     // Create WhatsApp message
     const whatsappMessage = createWhatsAppMessage(orderData);
-    
+
     // Open WhatsApp
-    const whatsappUrl = `https://wa.me/918509715190?text=${encodeURIComponent(whatsappMessage)}`;
+    const whatsappUrl = `https://wa.me/${whatsapp}?text=${encodeURIComponent(whatsappMessage)}`;
     window.open(whatsappUrl, '_blank');
-    
+
     // Clear cart and show success
     cart = [];
     updateCartCount();
     showSuccessMessage('Order placed successfully! Redirecting to WhatsApp...');
-    
+
     // Reset form
     form.reset();
-    
+
     // Redirect to home page after 3 seconds
     setTimeout(() => {
         showPage('home');
@@ -365,28 +374,28 @@ function createWhatsAppMessage(orderData) {
     message += `Name: ${orderData.name}\n`;
     message += `Phone: ${orderData.phone}\n`;
     message += `Email: ${orderData.email}\n\n`;
-    
+
     message += `*Delivery Address:*\n`;
     message += `${orderData.address}\n`;
     message += `${orderData.city} - ${orderData.pincode}\n\n`;
-    
+
     message += `*Delivery Details:*\n`;
     message += `Date: ${orderData.deliveryDate}\n`;
     message += `Time: ${orderData.deliveryTime}\n\n`;
-    
+
     message += `*Order Items:*\n`;
     orderData.items.forEach(item => {
         message += `${item.emoji} ${item.name} x${item.quantity} = ₹${item.price * item.quantity}\n`;
     });
-    
+
     message += `\n*Total Amount: ₹${orderData.total}*\n\n`;
-    
+
     if (orderData.specialInstructions) {
         message += `*Special Instructions:*\n${orderData.specialInstructions}\n\n`;
     }
-    
+
     message += `Please confirm this order. Thank you! 😊`;
-    
+
     return message;
 }
 
@@ -394,6 +403,16 @@ function createWhatsAppMessage(orderData) {
 function toggleMobileMenu() {
     const navLinks = document.querySelector('.nav-links');
     navLinks.classList.toggle('mobile-menu-active');
+    const btn = document.querySelector('.mobile-menu-btn i');
+    if (navLinks.classList.contains('mobile-menu-active')) {
+        navLinks.style.animation = 'slideDown 0.4s ease';
+        btn.classList.remove('fa-bars');
+        btn.classList.add('fa-times');
+    } else {
+        navLinks.style.animation = 'slideUp 0.3s ease';
+        btn.classList.remove('fa-times');
+        btn.classList.add('fa-bars');
+    }
 }
 
 // Set minimum date for delivery (tomorrow)
@@ -401,7 +420,7 @@ function setMinDeliveryDate() {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const minDate = tomorrow.toISOString().split('T')[0];
-    
+
     const deliveryDateInput = document.getElementById('deliveryDate');
     if (deliveryDateInput) {
         deliveryDateInput.setAttribute('min', minDate);
@@ -410,7 +429,7 @@ function setMinDeliveryDate() {
 }
 
 // Initialize delivery date when order page loads
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Set minimum delivery date when page loads
     setTimeout(setMinDeliveryDate, 100);
 });
@@ -437,7 +456,7 @@ function addInteractiveAnimations() {
 }
 
 // Call animations when cakes are loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     setTimeout(addInteractiveAnimations, 500);
 });
 
@@ -477,3 +496,35 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Add popout animation to cake cards
+const style = document.createElement('style');
+style.textContent += `
+@keyframes popout {
+  0% { transform: scale(0.95); box-shadow: none; }
+  60% { transform: scale(1.05); box-shadow: 0 8px 32px rgba(255,107,157,0.15); }
+  100% { transform: scale(1); box-shadow: 0 8px 32px rgba(255,107,157,0.10); }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-20px); }
+}
+.cake-card:active, .cake-card:focus {
+  animation: popout 0.4s cubic-bezier(.36,1.64,.7,.98);
+}
+`;
+document.head.appendChild(style);
+
+// Use WhatsApp from config.json for order
+async function getConfig() {
+    try {
+        const res = await fetch('../bakery-management-system/config.json'); // fixed relative path
+        return await res.json();
+    } catch {
+        return null;
+    }
+}
