@@ -128,6 +128,7 @@ nav {
     text-decoration: none;
     transition: var(--transition);
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 0.5rem;
 }
